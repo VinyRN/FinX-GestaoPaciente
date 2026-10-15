@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinX — Guia de Arquitetura</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, Segoe UI, sans-serif; color: #172033; background: #f4f7fb; }
+    body { margin: 0; }
+    main { max-width: 1040px; margin: auto; padding: 48px 24px 80px; }
+    h1 { margin: 0 0 8px; font-size: 42px; }
+    h2 { margin-top: 40px; color: #173d7a; }
+    p, li { line-height: 1.65; }
+    .lead { color: #536176; font-size: 18px; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0; }
+    .card { background: white; border: 1px solid #dce4ef; border-radius: 14px; padding: 20px; box-shadow: 0 8px 24px #173d7a12; }
+    .card strong { display: block; color: #0b6b62; margin-bottom: 8px; }
+    code { background: #eaf0f8; padding: 2px 6px; border-radius: 5px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #dce4ef; }
+    th { background: #173d7a; color: white; }
+    .note { border-left: 5px solid #0b8f7f; padding: 14px 18px; background: #e9f8f5; }
+    @media (max-width: 760px) { .flow { grid-template-columns: 1fr; } h1 { font-size: 32px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>FinX — Guia de Arquitetura</h1>
+  <p class="lead">Visão prática da arquitetura hexagonal, do contrato HTTP e da paginação MongoDB.</p>
+
+  <h2>Fluxo principal</h2>
+  <section class="flow">
+    <article class="card"><strong>1. API</strong>Recebe Request DTO, valida o contrato e converte para o domínio.</article>
+    <article class="card"><strong>2. Service</strong>Orquestra o caso de uso por meio de portas do Core.</article>
+    <article class="card"><strong>3. Repository</strong>Traduz filtros e comandos para MongoDB.Driver.</article>
+    <article class="card"><strong>4. MongoDB</strong>Executa filtro, contagem, ordenação, skip e limit.</article>
+  </section>
+
+  <h2>Dependências</h2>
+  <p><code>FinX.Core</code> não depende das camadas externas. <code>FinX.Service</code> depende das interfaces do Core. <code>FinX.Data</code> implementa as portas de persistência. <code>FinX.Api</code> expõe os adaptadores de entrada. <code>FinX.IoC</code> conecta implementações e interfaces.</p>
+
+  <h2>Contrato de paciente</h2>
+  <p>A única rota base é <code>/api/Paciente</code>. Não existem aliases para <code>/api/Patients</code> nem <code>/api/v1/pacientes</code>.</p>
+  <table>
+    <thead><tr><th>Consulta</th><th>Parâmetros</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Filtros</td><td>nome, cpf, nascimentoDe, nascimentoAte</td><td>Aplicados no MongoDB</td></tr>
+      <tr><td>Paginação</td><td>pagina, tamanhoPagina</td><td>itens e metadados</td></tr>
+      <tr><td>Ordenação</td><td>ordenarPor, direcao</td><td>campo solicitado + Id</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Compatibilidade</h2>
+  <p class="note">O domínio usa português, enquanto atributos BSON e JSON mantêm os nomes externos já utilizados. Assim, a organização interna evolui sem exigir migração silenciosa dos documentos.</p>
+
+  <h2>Composição</h2>
+  <p><code>MongoConfiguration.cs</code> registra um único <code>IMongoClient</code> e o banco configurado. <code>GeneralConfiguration.cs</code> registra repositórios, serviços e adaptadores, mantendo o composition root explícito.</p>
+
+  <h2>Validação</h2>
+  <p>Execute <code>dotnet build Fin-x.sln</code> e <code>dotnet test FinX.Tests/FinX.Tests.csproj</code>. Os testes cobrem a rota única e os metadados da paginação de pacientes.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "FinX - Gestão de Pacientes",
+    "description": "Collection atualizada para a rota única /api/Paciente e consultas paginadas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5006" },
+    { "key": "token", "value": "" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "" },
+    { "key": "pacienteId", "value": "00000000-0000-0000-0000-000000000000" },
+    { "key": "cpf", "value": "12345678901" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}" },
+            "url": "{{baseUrl}}/api/Auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["if (pm.response.code === 200) { pm.collectionVariables.set('token', pm.response.json().token); }"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Paciente",
+      "item": [
+        {
+          "name": "Criar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ana Souza\",\n  \"cpf\": \"{{cpf}}\",\n  \"dateOfBirth\": \"1990-05-20T00:00:00Z\",\n  \"contact\": \"ana@example.com\"\n}" },
+            "url": "{{baseUrl}}/api/Paciente"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Criado', () => pm.response.to.have.status(201));", "if (pm.response.code === 201) { pm.collectionVariables.set('pacienteId', pm.response.json().id); }"] }
+          }]
+        },
+        {
+          "name": "Consultar paginado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/Paciente?nome=ana&pagina=1&tamanhoPagina=20&ordenarPor=nome&direcao=asc"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.test('Metadados de paginação', function () { const b = pm.response.json(); pm.expect(b).to.have.all.keys('itens','pagina','tamanhoPagina','totalRegistros','totalPaginas'); });"] }
+          }]
+        },
+        {
+          "name": "Obter por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/Paciente/{{pacienteId}}" }
+        },
+        {
+          "name": "Atualizar",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ana Souza Atualizada\",\n  \"cpf\": \"{{cpf}}\",\n  \"dateOfBirth\": \"1990-05-20T00:00:00Z\",\n  \"contact\": \"ana.atualizada@example.com\"\n}" },
+            "url": "{{baseUrl}}/api/Paciente/{{pacienteId}}"
+          }
+        },
+        {
+          "name": "Adicionar registro médico",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"data\": \"2026-10-14T12:00:00Z\",\n  \"tipo\": \"Consulta\",\n  \"descricao\": \"Acompanhamento\"\n}" },
+            "url": "{{baseUrl}}/api/Paciente/{{pacienteId}}/registros-medicos"
+          }
+        },
+        {
+          "name": "Obter histórico médico",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/Paciente/{{pacienteId}}/registros-medicos" }
+        },
+        {
+          "name": "Listar duplicados por CPF",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/Paciente/duplicados/{{cpf}}" }
+        },
+        {
+          "name": "Unificar duplicados por CPF",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/Paciente/unificar-duplicados/{{cpf}}" }
+        },
+        {
+          "name": "Excluir",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/Paciente/{{pacienteId}}" }
+        }
+      ]
+    }
+  ]
+}
